@@ -1,3 +1,9 @@
 app:
   notify_before: "10:99r9"
   notify_after: "10:kkiii00"
+  array:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5

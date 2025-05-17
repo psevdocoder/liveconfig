@@ -18,6 +18,10 @@ func main() {
 		fmt.Printf("Параметр 'app.notify_after' изменился с %v на %v\n", oldValue, newValue)
 	})
 
+	liveconfig.Sub("app.array", func(newValue, oldValue any) {
+		fmt.Printf("Параметр 'app.array' изменился с %v на %v\n", oldValue, newValue)
+	})
+
 	// Блокируем выполнение
 	select {}
 }

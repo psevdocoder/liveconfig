@@ -3,6 +3,7 @@ package liveconfig
 import (
 	"log/slog"
 	"os"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -97,7 +98,7 @@ func (lc *LiveConfig) compareAndNotify(newData map[string]any) {
 		oldValue := getValueByPath(lc.configData, key)
 		newValue := getValueByPath(newData, key)
 
-		if oldValue != newValue {
+		if !reflect.DeepEqual(oldValue, newValue) {
 			for _, callback := range callbacks {
 				go callback(newValue, oldValue)
 			}
