@@ -10,9 +10,19 @@ import (
 func ConvertSlice[T any](items []any) ([]T, error) {
 	var result []T
 	for _, item := range items {
-		m, ok := item.(map[string]interface{})
+		rawMap, ok := item.(map[any]any)
 		if !ok {
-			return nil, fmt.Errorf("item is not a map: %v", item)
+			return nil, fmt.Errorf("item is not a map[any]any: %T", item)
+		}
+
+		// Приводим ключи к string
+		m := make(map[string]interface{}, len(rawMap))
+		for k, v := range rawMap {
+			skey, ok := k.(string)
+			if !ok {
+				continue // или return err, если ключ не строка
+			}
+			m[skey] = v
 		}
 
 		var t T
