@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// ConvertSlice преобразует слайс map[string]interface{} в слайс T
 func ConvertSlice[T any](items []any) ([]T, error) {
 	var result []T
 	for _, item := range items {
