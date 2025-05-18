@@ -1,31 +1,59 @@
 package liveconfig
 
-import "strings"
+import (
+	"fmt"
+	"reflect"
+	"strings"
+)
 
 func ConvertSlice[T any](items []any) ([]T, error) {
-	result := make([]T, 0, len(items))
-	cfg := &mapstructure.DecoderConfig{
-		Result:           &result,
-		WeaklyTypedInput: true, // авто-конвертация чисел/строк
-		MatchName: func(mapKey, fieldName string) bool {
-			// либо точно равные (без учёта регистра), либо snake_case→CamelCase
-			if strings.EqualFold(mapKey, fieldName) {
-				return true
+	var result []T
+	for _, item := range items {
+		m, ok := item.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("item is not a map: %v", item)
+		}
+
+		var t T
+		v := reflect.ValueOf(&t).Elem()
+		tType := v.Type()
+
+		for i := 0; i < tType.NumField(); i++ {
+			field := tType.Field(i)
+			if !v.Field(i).CanSet() {
+				continue
 			}
-			// простая конверсия snake → Camel
-			parts := strings.Split(mapKey, "_")
-			for i, p := range parts {
-				if p == "" {
-					continue
+
+			candidates := []string{
+				field.Name,
+				camelToSnake(field.Name),
+			}
+
+			for _, key := range candidates {
+				if val, ok := m[key]; ok {
+					fv := v.Field(i)
+					valVal := reflect.ValueOf(val)
+					if valVal.Type().AssignableTo(fv.Type()) {
+						fv.Set(valVal)
+					} else if valVal.Type().ConvertibleTo(fv.Type()) {
+						fv.Set(valVal.Convert(fv.Type()))
+					}
+					break
 				}
-				parts[i] = strings.ToUpper(p[:1]) + strings.ToLower(p[1:])
 			}
-			return strings.Join(parts, "") == fieldName
-		},
+		}
+		result = append(result, t)
 	}
-	dec, err := mapstructure.NewDecoder(cfg)
-	if err != nil {
-		return nil, err
+	return result, nil
+}
+
+func camelToSnake(s string) string {
+	var b strings.Builder
+	for i, r := range s {
+		if i > 0 && r >= 'A' && r <= 'Z' {
+			b.WriteByte('_')
+		}
+		b.WriteRune(r)
 	}
-	return result, dec.Decode(items)
+	return strings.ToLower(b.String())
 }
